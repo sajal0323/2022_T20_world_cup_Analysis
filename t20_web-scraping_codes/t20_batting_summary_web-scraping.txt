@@ -1,0 +1,88 @@
+// STAGE 1  *********
+
+// Interactive Code
+
+navigate('https://stats.espncricinfo.com/ci/engine/records/team/match_results.html?id=14450;type=tournament');
+
+let links = parse().matchSummaryLinks;
+for(let i of links)
+  {
+    next_stage({url: i})
+  }
+// parser code
+
+let links=[]
+const allRows = $('table.ds-table > tbody > tr');
+allRows.each((index,element) => {
+  const tds = $(element).find('td');
+  const rowURL =  "https://www.espncricinfo.com" +$(tds[6]).find('a').attr('href');
+  links.push(rowURL);
+})
+return {
+  'matchSummaryLinks' : links
+};
+
+
+
+// STAGE 2 *******
+
+// Interactive Code
+
+navigate(input.url);
+collect(parse());
+
+// parse code
+
+var matchTitle = $('div.ds-grow h1').text().split(',')[0].trim();
+// Split the matchTitle string into an array using the "vs" separator
+var teams = matchTitle.split(" vs ");
+
+// Extract team1 and team2 names from the array
+var team1 = teams[0];
+var team2 = teams[1];
+
+var tables = $('div > table.ci-scorecard-table');
+var firstInningRows = $(tables.eq(0)).find('tbody > tr').filter(function(index, element){
+  return $(this).find("td").length >= 8
+})
+
+var secondInningsRows = $(tables.eq(1)).find('tbody > tr').filter(function(index, element){
+  return $(this).find("td").length >= 8
+});
+
+
+var battingSummary = []
+
+firstInningRows.each((index, element) => {
+  var tds = $(element).find('td');
+  battingSummary.push({
+  		"match": matchTitle,
+  		"teamInnings": team1,
+   		"battingPos": index+1,
+  		"batsmanName": $(tds.eq(0)).find('a > span > span').text().trim(),
+    	"dismissal": $(tds.eq(1)).find('span > span').text(),
+  		"runs": $(tds.eq(2)).find('strong').text(), 
+  		"balls": $(tds.eq(3)).text(),
+  		"4s": $(tds.eq(5)).text(),
+  		"6s": $(tds.eq(6)).text(),
+ 		"SR": $(tds.eq(7)).text()
+  });
+});
+
+secondInningsRows.each((index, element) => {
+  var tds = $(element).find('td');
+   battingSummary.push({
+  		"match": matchTitle,
+  		"teamInnings": team2,
+   		"battingPos": index+1,
+  		"batsmanName": $(tds.eq(0)).find('a > span > span').text().trim(),
+     	"dismissal": $(tds.eq(1)).find('span > span').text(),
+  		"runs": $(tds.eq(2)).find('strong').text(), 
+  		"balls": $(tds.eq(3)).text(),
+  		"4s": $(tds.eq(5)).text(),
+  		"6s": $(tds.eq(6)).text(),
+ 		"SR": $(tds.eq(7)).text()
+  });
+});
+
+return {"battingSummary": battingSummary}

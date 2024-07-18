@@ -1,0 +1,91 @@
+/* -------------- STAGE 1 ------------ */
+
+//------- 1.a Interaction Code ------ //
+navigate('https://stats.espncricinfo.com/ci/engine/records/team/match_results.html?id=14450;type=tournament');
+
+
+let links = parse().playersLinks;
+for(let i of links) { 
+  next_stage({url: i}) 
+}
+
+//------- 1.b Parser Code ------------//
+let links=[]
+const allRows = $('table.ds-table > tbody > tr');
+allRows.each((index,element) => {
+  const tds = $(element).find('td');
+  const rowURL =  "https://www.espncricinfo.com" +$(tds[6]).find('a').attr('href');
+  links.push(rowURL);
+})
+return {
+  'playerLinks' : links
+};
+
+/* -------------- STAGE 2 ------------ */
+
+//------- 2.a Interaction Code ------ //
+navigate(input.url);
+collect(parse());
+
+//---------- 2.b Parser Code ---------//
+var matchTitle = $('div.ds-grow h1').text().split(',')[0].trim();
+
+// Split the matchTitle string into an array using the "vs" separator
+var teams = matchTitle.split(" vs ");
+
+// Extract team1 and team2 names from the array
+var team1 = teams[0];
+var team2 = teams[1];
+
+
+var tables = $('div.ds-table');
+var firstInningRows = $(tables.eq(1)).find('tbody > tr').filter(function(index, element){
+  return $(this).find("td").length >= 11
+})
+
+var secondInningsRows = $(tables.eq(3)).find('tbody > tr').filter(function(index, element){
+  return $(this).find("td").length >= 11
+});
+
+
+var bowlingSummary = []
+firstInningRows.each((index, element) => {
+  var tds = $(element).find('td');
+  bowlingSummary.push({
+  		"match": matchTitle,
+  		"bowlingTeam": team2,
+   		"bowlerName": $(tds.eq(0)).find('a > span').text().trim(),
+    	"overs": $(tds.eq(1)).text(),
+  		"maiden": $(tds.eq(2)).text(), 
+  		"runs": $(tds.eq(3)).text(),
+  		"wickets": $(tds.eq(4)).text(),
+  		"economy": $(tds.eq(5)).text(),
+ 		"0s": $(tds.eq(6)).text(),
+    	"4s": $(tds.eq(7)).text(),
+    	"6s": $(tds.eq(8)).text(),
+    	"wides": $(tds.eq(9)).text(),
+    	"noBalls": $(tds.eq(10)).text()
+  });
+});
+
+secondInningsRows.each((index, element) => {
+  var tds = $(element).find('td');
+   bowlingSummary.push({
+  		"match": matchTitle,
+  		"bowlingTeam": team1,
+   		"bowlerName": $(tds.eq(0)).find('a > span').text().trim(),
+    	"overs": $(tds.eq(1)).text(),
+  		"maiden": $(tds.eq(2)).text(), 
+  		"runs": $(tds.eq(3)).text(),
+  		"wickets": $(tds.eq(4)).text(),
+  		"economy": $(tds.eq(5)).text(),
+ 		"0s": $(tds.eq(6)).text(),
+    	"4s": $(tds.eq(7)).text(),
+    	"6s": $(tds.eq(8)).text(),
+    	"wides": $(tds.eq(9)).text(),
+    	"noBalls": $(tds.eq(10)).text()
+  });
+});
+
+return {"bowlingSummary": bowlingSummary}
+
